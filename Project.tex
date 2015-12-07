@@ -407,10 +407,8 @@ future use}\label{save-training-and-test-into-csv-file-for-future-use}
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{if (!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{'training.csv'}\NormalTok{))\{}
-    \KeywordTok{write.csv}\NormalTok{(training,}\StringTok{'training.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
-    \KeywordTok{write.csv}\NormalTok{(training_label,}\StringTok{'training_label.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
-    \KeywordTok{write.csv}\NormalTok{(test,}\StringTok{'test.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
-    \KeywordTok{write.csv}\NormalTok{(test_label,}\StringTok{'test_label.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
+    \KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(training,training_label),}\StringTok{'training.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
+    \KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(test,test_label),}\StringTok{'test.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
 \NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}

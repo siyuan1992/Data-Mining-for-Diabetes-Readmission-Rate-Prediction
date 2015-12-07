@@ -119,10 +119,8 @@ test <- test[,-which(NZV$nzv==TRUE)]
 
 ```{r savecsv}
 if (!file.exists('training.csv')){
-    write.csv(training,'training.csv',row.names = FALSE)
-    write.csv(training_label,'training_label.csv',row.names = FALSE)
-    write.csv(test,'test.csv',row.names = FALSE)
-    write.csv(test_label,'test_label.csv',row.names = FALSE)
+    write.csv(cbind(training,training_label),'training.csv',row.names = FALSE)
+    write.csv(cbind(test,test_label),'test.csv',row.names = FALSE)
 }
 ```
 
