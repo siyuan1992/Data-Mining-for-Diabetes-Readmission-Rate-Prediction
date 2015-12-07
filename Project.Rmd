@@ -1,0 +1,130 @@
+---
+title: "Impact of HbA1c Measurement on Hospital Readmission Rates"
+author: "Siyuan Meng"
+date: "December 4, 2015"
+output: 
+  pdf_document: 
+    keep_tex: yes
+---
+# Reproducibility
+In order to get the same results, need certain set of packages, as well as setting a pseudo-random seed equal the one I used.
+
+* The following libraries were used for this project:
+
+```{r Loading packages}
+library(caret)
+library(randomForest)
+library(pander)
+```
+
+* Here is the seed I set to generate pseudo-random numbers for spliting training and test dataset. (see `Preprocessing` section)
+```{r setseed}
+set.seed(12345)
+```
+
+# Getting data
+
+```{r Import dataset, cache=TRUE}
+setwd("~/Documents/2015Fall/EE660/EE660_Project")
+data <- read.csv("~/Documents/2015Fall/EE660/Project/diabetic_data.csv",
+                 stringsAsFactors=T,na.strings = '?')
+dim(data)
+```
+
+# Cleaning data
+
+The original missing value information can be found in http://www.hindawi.com/journals/bmri/2014/781670/tab1/. For simplicity, only show features which have missing values. (cite)
+
+```{r missingvalues, echo=FALSE}
+NA_information <- data.frame(Feature_name=c(1:5),Type=c(1:5),Discription=c(1:5), Propotional_missing=c(1:5))
+NA_information$Feature_name <- c('Race','Weight','Payer code','Medical specialty','Diagnosis 3')
+NA_information$Type <- c('Nominal','Numeric','Nominal','Nominal','Nominal')
+NA_information$Discription <- c('Values: Caucasian, Asian, African American, Hispanic, and other','Weight in pounds','Integer identifier corresponding to 23 distinct values, 
+                                for example, Blue Cross/Blue Shield, Medicare, and self-pay','Integer identifier of a specialty of the admitting physician,
+                                corresponding to 84 distinct values','Additional secondary diagnosis (coded as first three digits of ICD9),
+                                corresponding to 954 distinct values')
+NA_information$Propotional_missing <- c('2%','97%','40%','50%','1%')
+pander(NA_information)
+```
+
+The way I deal with missing values is to delete `Weight`, `Payer code` and `Medical speciality` feaures (columns), since all three features have more than 50% missing values and then delete samples (rows) which has missing values. 
+
+```{r deleteNA}
+data <- data[,c(-6,-11,-12)]
+data <- na.omit(data)
+dim(data)
+```
+
+In general, should split the original data into training and testing first and then deal with the missing values. However, both methods will yield same dimension `data`. For simplicity, deal with NAs first here.
+
+# Preprocessing
+(Preprocessing is more crucial when using model based algorithms, e.g. Linear Discrimant Analysis, Naive Bayes, Linear Regression...than using non-parametrical algorithms.)
+
+* There are also other ways to impute data, like knnimpute...For convenience, try omitting NA rows first.
+
+* Kill the first two features(`encounter_id` and `patient_nbr`) which are ids for encounted and patients. They are not considered relevant to the outcome. Also, extract label column, which is the last column of `data`.
+
+```{r killfirsttwo}
+data <- data[,c(-1,-2)]
+label <- data$readmitted
+data <- data[,-45]
+```
+
+* Use background information for all features to analyze which features should be converted to numerical features. (cite)
+
+```{r Preprocessing_C2N, cache=TRUE}
+source('~/Documents/2015Fall/EE660/Project/C2N.R')
+for (i in c(1:6,14:16,18:44)){
+    temp <- as.factor(data[,i])
+    data <- cbind(data,C2N(temp))
+}
+data <- data[,-c(1:6,14:16,18:44)]    
+```
+
+* Split this train data into training and test dataset according to the ratio 6:4 (set seed to make partioning reproducible)
+(Here I don't split validation since without looking data, there is possibility that test and training may not have the same distribution of different classes. Using cross validation is better in this case, though the computational complexity is high.)
+
+```{r Preprocessing_splitting, cache=TRUE}
+inTrain <- createDataPartition(label,p=0.6,list=FALSE)
+training <- data[inTrain,]
+training_label <- label[inTrain]
+test <- data[-inTrain,]
+test_label <- label[-inTrain]
+```
+
+* Now, let's see if samples of different classes of `training` dataset are unbalanced.
+
+```{r Preprocessing_classtype}
+par(cex=0.7,pin=c(4,3))
+plot((training_label), xlab = 'Days to inpatient readmission', ylab = 'frequency',
+     col = 'red', main = 'Histogram of different classes')
+```
+
+Classes are unbalanced distributed, but not very skewed.
+
+* Kill unimportant features.(_nearZeroVar_ diagnoses predictors that have one unique value (i.e. are zero variance predictors) or predictors that are have both of the following characteristics: they have very few unique values relative to the number of samples and the ratio of the frequency of the most common value to the frequency of the second most common value is large.) (cite)
+
+```{r Preprocessing_feature_statistics,cache=TRUE}
+NZV <- nearZeroVar(training,saveMetrics = T)
+training <- training[,-which(NZV$nzv==TRUE)]
+```
+
+* Kill same features for `test` dataset without looking inside.
+
+```{r killfeatures_test}
+test <- test[,-which(NZV$nzv==TRUE)]
+```
+
+# Save `training` and `test` into csv file for future use
+
+```{r savecsv}
+if (!file.exists('training.csv')){
+    write.csv(training,'training.csv',row.names = FALSE)
+    write.csv(training_label,'training_label.csv',row.names = FALSE)
+    write.csv(test,'test.csv',row.names = FALSE)
+    write.csv(test_label,'test_label.csv',row.names = FALSE)
+}
+```
+
+Purpose for doing that is `R` is good for exploratory research, but not good at dealing with large dataset for clasification. Use `Python` to read csv as `SFrame` for classification will speed up! (cite)
+
