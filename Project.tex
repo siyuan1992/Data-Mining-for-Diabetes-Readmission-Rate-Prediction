@@ -66,8 +66,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={Siyuan Meng},
-            pdftitle={Impact of HbA1c Measurement on Hospital Readmission Rates},
+            pdfauthor={Siyuan Meng; siyuanme@usc.edu},
+            pdftitle={Data Mining for Diabetes Readmission Prediction},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -94,15 +94,15 @@
 }
 
 \setlength{\droptitle}{-2em}
-  \title{Impact of HbA1c Measurement on Hospital Readmission Rates}
+  \title{Data Mining for Diabetes Readmission Prediction}
   \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
-  \author{Siyuan Meng}
+  \author{Siyuan Meng \\ \href{mailto:siyuanme@usc.edu}{\nolinkurl{siyuanme@usc.edu}}}
   \preauthor{\centering\large\emph}
   \postauthor{\par}
   \predate{\centering\large\emph}
   \postdate{\par}
-  \date{December 4, 2015}
+  \date{December 8, 2015}
 
 
 
@@ -168,7 +168,7 @@ as setting a pseudo-random seed equal the one I used.
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{setwd}\NormalTok{(}\StringTok{"~/Documents/2015Fall/EE660/EE660_Project"}\NormalTok{)}
-\NormalTok{data <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"~/Documents/2015Fall/EE660/Project/diabetic_data.csv"}\NormalTok{,}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"~/Documents/2015Fall/EE660/EE660_Project/diabetic_data.csv"}\NormalTok{,}
                  \DataTypeTok{stringsAsFactors=}\NormalTok{T,}\DataTypeTok{na.strings =} \StringTok{'?'}\NormalTok{)}
 \KeywordTok{dim}\NormalTok{(data)}
 \end{Highlighting}
@@ -267,26 +267,30 @@ corresponding to 954 distinct values
 \end{longtable}
 
 The way I deal with missing values is to delete \texttt{Weight},
-\texttt{Payer code} and \texttt{Medical speciality} feaures (columns),
-since all three features have more than 50\% missing values and then
-delete samples (rows) which has missing values.
+\texttt{Payer code} feaures (columns), since both features have more
+than 50\% missing values and they are not relevant to classification.
+However, \texttt{Medical speciality} was maintained, adding the value
+``missing'' in order to account for missing values. (cite)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{6}\NormalTok{,-}\DecValTok{11}\NormalTok{,-}\DecValTok{12}\NormalTok{)]}
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{6}\NormalTok{,-}\DecValTok{11}\NormalTok{)]}
+\NormalTok{data$medical_specialty <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(data$medical_specialty,}
+                \DataTypeTok{levels=}\KeywordTok{c}\NormalTok{(}\KeywordTok{levels}\NormalTok{(data$medical_specialty),}\StringTok{'Missing'}\NormalTok{))}
+\NormalTok{data[,}\DecValTok{10}\NormalTok{][}\KeywordTok{is.na}\NormalTok{(data$medical_specialty)] <-}\StringTok{ 'Missing'}
 \NormalTok{data <-}\StringTok{ }\KeywordTok{na.omit}\NormalTok{(data)}
 \KeywordTok{dim}\NormalTok{(data)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 98053    47
+## [1] 98053    48
 \end{verbatim}
 
 In general, should split the original data into training and testing
 first and then deal with the missing values. However, both methods will
-yield same dimension \texttt{data}. For simplicity, deal with NAs first
-here.
+yield same dimension of \texttt{data}. For simplicity, deal with NAs
+first here.
 
 \section{Preprocessing}\label{preprocessing}
 
@@ -299,35 +303,63 @@ Regression\ldots{}than using non-parametrical algorithms.)
   There are also other ways to impute data, like knnimpute\ldots{}For
   convenience, try omitting NA rows first.
 \item
-  Kill the first two features(\texttt{encounter\_id} and
-  \texttt{patient\_nbr}) which are ids for encounted and patients. They
-  are not considered relevant to the outcome. Also, extract label
-  column, which is the last column of \texttt{data}.
+  The data has been preprocessed to ensure each encounter has a unique
+  id. However, each patient may have more than one id.
 \end{itemize}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{1}\NormalTok{,-}\DecValTok{2}\NormalTok{)]}
-\NormalTok{label <-}\StringTok{ }\NormalTok{data$readmitted}
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\DecValTok{45}\NormalTok{]}
+\KeywordTok{length}\NormalTok{(}\KeywordTok{unique}\NormalTok{(data$encounter_id))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 98053
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{length}\NormalTok{(}\KeywordTok{unique}\NormalTok{(data$patient_nbr))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 68630
+\end{verbatim}
+
+We thus used only one encounter per patient; in particular, we
+considered only the first encounter for each patient as the primary
+admission and determined whether or not they were readmitted within 30
+days. (cite)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[}\KeywordTok{order}\NormalTok{(data[,}\DecValTok{2}\NormalTok{]),]}
+\NormalTok{unique_list <-}\StringTok{ }\KeywordTok{array}\NormalTok{(}\OtherTok{TRUE}\NormalTok{,}\KeywordTok{nrow}\NormalTok{(data))}
+\NormalTok{for (l in }\DecValTok{2}\NormalTok{:}\KeywordTok{nrow}\NormalTok{(data))\{}
+    \NormalTok{if (data[l,}\StringTok{'patient_nbr'}\NormalTok{]==data[l}\DecValTok{-1}\NormalTok{,}\StringTok{'patient_nbr'}\NormalTok{])\{}
+        \NormalTok{unique_list[l]=}\OtherTok{FALSE}
+    \NormalTok{\}}
+\NormalTok{\}}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{subset}\NormalTok{(data,unique_list)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{itemize}
 \itemsep1pt\parskip0pt\parsep0pt
 \item
-  Use background information for all features to analyze which features
-  should be converted to numerical features. (cite)
+  Kill the first two features(\texttt{encounter\_id} and
+  \texttt{patient\_nbr}) which are ids for encounted and patients. Also,
+  kill near zero variables, since they are not considered relevant to
+  the outcome. Besides, extract label column, which is the last column
+  of \texttt{data}.
 \end{itemize}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{source}\NormalTok{(}\StringTok{'~/Documents/2015Fall/EE660/Project/C2N.R'}\NormalTok{)}
-\NormalTok{for (i in }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{14}\NormalTok{:}\DecValTok{16}\NormalTok{,}\DecValTok{18}\NormalTok{:}\DecValTok{44}\NormalTok{))\{}
-    \NormalTok{temp <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(data[,i])}
-    \NormalTok{data <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(data,}\KeywordTok{C2N}\NormalTok{(temp))}
-\NormalTok{\}}
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{14}\NormalTok{:}\DecValTok{16}\NormalTok{,}\DecValTok{18}\NormalTok{:}\DecValTok{44}\NormalTok{)]    }
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{1}\NormalTok{,-}\DecValTok{2}\NormalTok{)]}
+\NormalTok{label <-}\StringTok{ }\NormalTok{data$readmitted}
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\DecValTok{46}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -344,7 +376,7 @@ Regression\ldots{}than using non-parametrical algorithms.)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{inTrain <-}\StringTok{ }\KeywordTok{createDataPartition}\NormalTok{(label,}\DataTypeTok{p=}\FloatTok{0.6}\NormalTok{,}\DataTypeTok{list=}\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{inTrain <-}\StringTok{ }\KeywordTok{createDataPartition}\NormalTok{(label,}\DataTypeTok{p=}\FloatTok{0.8}\NormalTok{,}\DataTypeTok{list=}\OtherTok{FALSE}\NormalTok{)}
 \NormalTok{training <-}\StringTok{ }\NormalTok{data[inTrain,]}
 \NormalTok{training_label <-}\StringTok{ }\NormalTok{label[inTrain]}
 \NormalTok{test <-}\StringTok{ }\NormalTok{data[-inTrain,]}
@@ -384,7 +416,7 @@ Classes are unbalanced distributed, but not very skewed.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{NZV <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T)}
+\NormalTok{NZV <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{98}\NormalTok{/}\DecValTok{2}\NormalTok{)}
 \NormalTok{training <-}\StringTok{ }\NormalTok{training[,-}\KeywordTok{which}\NormalTok{(NZV$nzv==}\OtherTok{TRUE}\NormalTok{)]}
 \end{Highlighting}
 \end{Shaded}
@@ -401,15 +433,71 @@ Classes are unbalanced distributed, but not very skewed.
 \end{Highlighting}
 \end{Shaded}
 
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Use background information for all features to analyze which features
+  should be converted to numerical features. (cite)
+\item
+  Note: Need to combine training and test to a big dataset and then
+  convert to numerical fearutes. If convert seperately, some feature may
+  have some level which has only few points and are all assigned into
+  \texttt{training} or \texttt{test} dataset. This may lead to different
+  dimensions for \texttt{training} and \texttt{test} dataset after
+  conversion.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{source}\NormalTok{(}\StringTok{'~/Documents/2015Fall/EE660/EE660_Project/C2N.R'}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(training,test)}
+\NormalTok{for (i in }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{:}\DecValTok{17}\NormalTok{,}\DecValTok{19}\NormalTok{:}\DecValTok{29}\NormalTok{))\{}
+    \NormalTok{temp <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(data[,i])}
+    \NormalTok{data <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(data,}\KeywordTok{C2N}\NormalTok{(temp))}
+\NormalTok{\}}
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{:}\DecValTok{17}\NormalTok{,}\DecValTok{19}\NormalTok{:}\DecValTok{29}\NormalTok{)]}
+\NormalTok{training <-}\StringTok{ }\NormalTok{data[}\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(training_label),]}
+\NormalTok{test <-}\StringTok{ }\NormalTok{data[(}\KeywordTok{length}\NormalTok{(training_label)+}\DecValTok{1}\NormalTok{):}\DecValTok{68630}\NormalTok{,]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Again, kill unimportant features using \emph{nearZeroVar}.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{NZV_2 <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{98}\NormalTok{/}\DecValTok{2}\NormalTok{)}
+\NormalTok{training <-}\StringTok{ }\NormalTok{training[,-}\KeywordTok{which}\NormalTok{(NZV_2$nzv==}\OtherTok{TRUE}\NormalTok{)]}
+\NormalTok{test<-}\StringTok{ }\NormalTok{test[,-}\KeywordTok{which}\NormalTok{(NZV_2$nzv==}\OtherTok{TRUE}\NormalTok{)]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Normalize data (tried different methods, just write the best one I
+  found here)
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{training <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(training,}\DecValTok{2}\NormalTok{,as.numeric)}
+\NormalTok{test <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,as.numeric)}
+\NormalTok{training_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(training,}\DecValTok{2}\NormalTok{,function(x) x/}\KeywordTok{sum}\NormalTok{(x))}
+\NormalTok{test_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,function(x) x/}\KeywordTok{sum}\NormalTok{(x))}
+\end{Highlighting}
+\end{Shaded}
+
 \section{Save \texttt{training} and \texttt{test} into csv file for
 future use}\label{save-training-and-test-into-csv-file-for-future-use}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{if (!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{'training.csv'}\NormalTok{))\{}
-    \KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(training,training_label),}\StringTok{'training.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
-    \KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(test,test_label),}\StringTok{'test.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
-\NormalTok{\}}
+\KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(training_std,training_label),}\StringTok{'training.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
+\KeywordTok{write.csv}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(test_std,test_label),}\StringTok{'test.csv'}\NormalTok{,}\DataTypeTok{row.names =} \OtherTok{FALSE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
