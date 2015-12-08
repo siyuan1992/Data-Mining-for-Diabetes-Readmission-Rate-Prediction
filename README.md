@@ -6,5 +6,5 @@ This is the repository of EE660 final project.
 2. The second part (classification, further analysis) is in `Project.ipynb`.
 - Data and relevant paper is in http://www.hindawi.com/journals/bmri/2014/781670/.
 - The downloaded data are `diabetic_data.csv` and `IDs_mapping.csv` in this repository.
-- `Project_cache` and `Project_v1.Rdata` are cache files for R to speed up.
+- `Project_cache` and `Project.Rdata` are cache files for R to speed up.
 - Other informations, please see `Project.pdf`.
