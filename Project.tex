@@ -67,7 +67,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Siyuan Meng; siyuanme@usc.edu},
-            pdftitle={Data Mining for Diabetes Readmission Prediction},
+            pdftitle={Data Mining for Diabetes Readmission Rate Prediction},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -94,7 +94,7 @@
 }
 
 \setlength{\droptitle}{-2em}
-  \title{Data Mining for Diabetes Readmission Prediction}
+  \title{Data Mining for Diabetes Readmission Rate Prediction}
   \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
   \author{Siyuan Meng \\ \href{mailto:siyuanme@usc.edu}{\nolinkurl{siyuanme@usc.edu}}}
@@ -110,6 +110,55 @@
 
 \maketitle
 
+
+\section{Project Homepage}\label{project-homepage}
+
+The link of project repository is
+\url{https://github.com/siyuan1992/EE660_Project}. For more information,
+please see \texttt{README.md}.
+
+\section{Abstract}\label{abstract}
+
+The management of hyperglycemia in the hospitalized inpatient becomes
+increasing recognized, due to the morbidity and mortality outcome
+{[}1,2{]}. For most non-ICU (Inensive Care Unit) patients, anecdotal
+evidence says that inpatient managenent is arbitrary and often leads to
+either no treatment or wide fluctuations in glucose when traditional
+management strategies are employed {[}4,5{]}. Thus, protocols are
+recommended. Effective prediction on readmissions enables hospitals to
+identify and target patients at high risk {[}slideshare{]}. Therefore,
+the goals are discovering major factors contributing to hospitals
+readmissions as well as finding the effective method to predict the type
+of readmissions. Top three most important features for prediction are
+\texttt{Number of inpatient visits}, \texttt{Admission type} and
+\texttt{Admission source}. The best method for classification is
+boosting-tree classifier. However, with data pre-mining and QUEST
+(Quick, Unbiased and Effecient Statistical Tree), there will be
+5\%\textasciitilde{}7\% further accuray improvement.
+
+\section{Problem Statement and Goals}\label{problem-statement-and-goals}
+
+The data is from the Center for Clinical and Translational Research,
+Viginia Commonwealth University, which presents 10 years (1999-2008) of
+clinical care at 130 US hospitals and integrated delivery networks
+{[}paper{]}. The goals here are identify the major factors that
+contribute to hospital readmissions as well as find the best model to
+predict the readmission type given inpatient information.
+
+The difficulties of this problem are mainly in the following aspects: *
+The dataset is relatively large (\textasciitilde{}100,000 samples, 55
+features) * Several features have large propotional missing data due to
+the fact that prior to the HITECH legislation of the American
+Reinvestment and Recovery Act in 2009 hospitals and clinics were not
+required to capture it in a structured format {[}paper{]}. * Significant
+amounts of preprocessing required: + The preliminary dataet contained
+multiple inpaitent visits for some patients
+
+\section{Literature Review}\label{literature-review}
+
+\section{Prior and Related Work}\label{prior-and-related-work}
+
+This project is exclusively for EE660.
 
 \section{Reproducibility}\label{reproducibility}
 
@@ -147,6 +196,27 @@ as setting a pseudo-random seed equal the one I used.
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(pander)}
+\KeywordTok{library}\NormalTok{(psych)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'psych'
+## 
+## The following object is masked from 'package:randomForest':
+## 
+##     outlier
+## 
+## The following object is masked from 'package:ggplot2':
+## 
+##     %+%
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(FactoMineR)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -349,16 +419,18 @@ days. (cite)
 \itemsep1pt\parskip0pt\parsep0pt
 \item
   Kill the first two features(\texttt{encounter\_id} and
-  \texttt{patient\_nbr}) which are ids for encounted and patients. Also,
-  kill near zero variables, since they are not considered relevant to
-  the outcome. Besides, extract label column, which is the last column
-  of \texttt{data}.
+  \texttt{patient\_nbr}) which are ids for encounted and patients.
+  Besides, extract label column, which is the last column of
+  \texttt{data}. For two-stage classification, generate new label
+  \texttt{label\_gen} which has two levels.
 \end{itemize}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{1}\NormalTok{,-}\DecValTok{2}\NormalTok{)]}
 \NormalTok{label <-}\StringTok{ }\NormalTok{data$readmitted}
+\NormalTok{label_gen <-}\StringTok{ }\NormalTok{label}
+\KeywordTok{levels}\NormalTok{(label_gen) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'NO'}\NormalTok{)}
 \NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\DecValTok{46}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
@@ -379,8 +451,10 @@ days. (cite)
 \NormalTok{inTrain <-}\StringTok{ }\KeywordTok{createDataPartition}\NormalTok{(label,}\DataTypeTok{p=}\FloatTok{0.8}\NormalTok{,}\DataTypeTok{list=}\OtherTok{FALSE}\NormalTok{)}
 \NormalTok{training <-}\StringTok{ }\NormalTok{data[inTrain,]}
 \NormalTok{training_label <-}\StringTok{ }\NormalTok{label[inTrain]}
+\NormalTok{training_label_gen <-}\StringTok{ }\NormalTok{label_gen[inTrain]}
 \NormalTok{test <-}\StringTok{ }\NormalTok{data[-inTrain,]}
 \NormalTok{test_label <-}\StringTok{ }\NormalTok{label[-inTrain]}
+\NormalTok{test_label_gen <-}\StringTok{ }\NormalTok{label_gen[-inTrain]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -394,14 +468,26 @@ days. (cite)
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{par}\NormalTok{(}\DataTypeTok{cex=}\FloatTok{0.7}\NormalTok{,}\DataTypeTok{pin=}\KeywordTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{3}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{((training_label), }\DataTypeTok{xlab =} \StringTok{'Days to inpatient readmission'}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{'frequency'}\NormalTok{,}
-     \DataTypeTok{col =} \StringTok{'red'}\NormalTok{, }\DataTypeTok{main =} \StringTok{'Histogram of different classes'}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{((training_label), }\DataTypeTok{xlab =} \StringTok{'Days to inpatient readmission'}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{'frequency'}\NormalTok{,}\DataTypeTok{col =} \StringTok{'red'}\NormalTok{, }\DataTypeTok{main =} \StringTok{'Histogram of different classes'}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{Project_files/figure-latex/Preprocessing_classtype-1.pdf}
 
-Classes are unbalanced distributed, but not very skewed.
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{cex=}\FloatTok{0.7}\NormalTok{,}\DataTypeTok{pin=}\KeywordTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\KeywordTok{plot}\NormalTok{((training_label_gen), }\DataTypeTok{xlab =} \StringTok{'Readmission or not'}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{'frequency'}\NormalTok{,}
+     \DataTypeTok{col =} \StringTok{'red'}\NormalTok{, }\DataTypeTok{main =} \StringTok{'Histogram of different classes'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Project_files/figure-latex/Preprocessing_classtype-2.pdf}
+
+Classes are unbalanced distributed in three levels, but not very skewed.
+Since \texttt{\textless{}30} and \texttt{\textgreater{}30} are subsets
+of \texttt{Readmission}, hierarchical classification (two-stage
+classification) is straightforward.
 
 \begin{itemize}
 \itemsep1pt\parskip0pt\parsep0pt
@@ -416,7 +502,7 @@ Classes are unbalanced distributed, but not very skewed.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{NZV <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{98}\NormalTok{/}\DecValTok{2}\NormalTok{)}
+\NormalTok{NZV <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{95}\NormalTok{/}\DecValTok{5}\NormalTok{)}
 \NormalTok{training <-}\StringTok{ }\NormalTok{training[,-}\KeywordTok{which}\NormalTok{(NZV$nzv==}\OtherTok{TRUE}\NormalTok{)]}
 \end{Highlighting}
 \end{Shaded}
@@ -445,17 +531,45 @@ Classes are unbalanced distributed, but not very skewed.
   \texttt{training} or \texttt{test} dataset. This may lead to different
   dimensions for \texttt{training} and \texttt{test} dataset after
   conversion.
+\item
+  First, drop large factors \texttt{diag2} and \texttt{diag3}.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{training <-}\StringTok{ }\NormalTok{training[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{16}\NormalTok{,-}\DecValTok{17}\NormalTok{)]}
+\NormalTok{test <-}\StringTok{ }\NormalTok{test[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{16}\NormalTok{,-}\DecValTok{17}\NormalTok{)]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Second, drop last nine features.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{training <-}\StringTok{ }\NormalTok{training[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{17}\NormalTok{:}\DecValTok{25}\NormalTok{)]}
+\NormalTok{test <-}\StringTok{ }\NormalTok{test[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{17}\NormalTok{:}\DecValTok{25}\NormalTok{)]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Third, convert categorical features to numerical features.
 \end{itemize}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{source}\NormalTok{(}\StringTok{'~/Documents/2015Fall/EE660/EE660_Project/C2N.R'}\NormalTok{)}
 \NormalTok{data <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(training,test)}
-\NormalTok{for (i in }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{:}\DecValTok{17}\NormalTok{,}\DecValTok{19}\NormalTok{:}\DecValTok{29}\NormalTok{))\{}
+\NormalTok{for (i in }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{))\{}
     \NormalTok{temp <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(data[,i])}
     \NormalTok{data <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(data,}\KeywordTok{C2N}\NormalTok{(temp))}
 \NormalTok{\}}
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{:}\DecValTok{17}\NormalTok{,}\DecValTok{19}\NormalTok{:}\DecValTok{29}\NormalTok{)]}
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{)]}
 \NormalTok{training <-}\StringTok{ }\NormalTok{data[}\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(training_label),]}
 \NormalTok{test <-}\StringTok{ }\NormalTok{data[(}\KeywordTok{length}\NormalTok{(training_label)+}\DecValTok{1}\NormalTok{):}\DecValTok{68630}\NormalTok{,]}
 \end{Highlighting}
@@ -469,7 +583,7 @@ Classes are unbalanced distributed, but not very skewed.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{NZV_2 <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{98}\NormalTok{/}\DecValTok{2}\NormalTok{)}
+\NormalTok{NZV_2 <-}\StringTok{ }\KeywordTok{nearZeroVar}\NormalTok{(training,}\DataTypeTok{saveMetrics =} \NormalTok{T,}\DataTypeTok{freqCut=}\DecValTok{95}\NormalTok{/}\DecValTok{5}\NormalTok{)}
 \NormalTok{training <-}\StringTok{ }\NormalTok{training[,-}\KeywordTok{which}\NormalTok{(NZV_2$nzv==}\OtherTok{TRUE}\NormalTok{)]}
 \NormalTok{test<-}\StringTok{ }\NormalTok{test[,-}\KeywordTok{which}\NormalTok{(NZV_2$nzv==}\OtherTok{TRUE}\NormalTok{)]}
 \end{Highlighting}
@@ -478,16 +592,30 @@ Classes are unbalanced distributed, but not very skewed.
 \begin{itemize}
 \itemsep1pt\parskip0pt\parsep0pt
 \item
-  Normalize data (tried different methods, just write the best one I
-  found here)
+  Convert dataframe to numericl matrix for PCA analysis. (Need to use
+  validation set to check what is the best dimension in classification.)
 \end{itemize}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{training <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(training,}\DecValTok{2}\NormalTok{,as.numeric)}
-\NormalTok{test <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,as.numeric)}
-\NormalTok{training_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(training,}\DecValTok{2}\NormalTok{,function(x) x/}\KeywordTok{sum}\NormalTok{(x))}
-\NormalTok{test_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,function(x) x/}\KeywordTok{sum}\NormalTok{(x))}
+\NormalTok{test <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,as.numeric) }\CommentTok{# workspace saved here}
+\NormalTok{PCA_fit <-}\StringTok{ }\KeywordTok{prcomp}\NormalTok{(training)}
+\NormalTok{training_std <-}\StringTok{ }\NormalTok{PCA_fit$x[,}\DecValTok{1}\NormalTok{:}\DecValTok{3}\NormalTok{]}
+\NormalTok{test_std <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(PCA_fit,test)[,}\DecValTok{1}\NormalTok{:}\DecValTok{3}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Normalize data (There are lots of diffeent methods for normalization,
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{training_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(training,}\DecValTok{2}\NormalTok{,function(x) (x-}\KeywordTok{mean}\NormalTok{(x))/}\KeywordTok{sd}\NormalTok{(x))}
+\NormalTok{test_std <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(test,}\DecValTok{2}\NormalTok{,function(x) (x-}\KeywordTok{mean}\NormalTok{(x))/}\KeywordTok{sd}\NormalTok{(x))}
 \end{Highlighting}
 \end{Shaded}
 
