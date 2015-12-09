@@ -1081,8 +1081,7 @@ first here.
 \begin{Highlighting}[]
 \NormalTok{data <-}\StringTok{ }\NormalTok{data[,}\KeywordTok{c}\NormalTok{(-}\DecValTok{1}\NormalTok{,-}\DecValTok{2}\NormalTok{)]}
 \NormalTok{label <-}\StringTok{ }\NormalTok{data$readmitted}
-\NormalTok{label_gen <-}\StringTok{ }\NormalTok{label}
-\KeywordTok{levels}\NormalTok{(label_gen) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'NO'}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\DecValTok{46}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 

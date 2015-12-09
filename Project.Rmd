@@ -222,8 +222,7 @@ In general, should split the original data into training and testing first and t
     ```{r killfirsttwo}
     data <- data[,c(-1,-2)]
     label <- data$readmitted
-    label_gen <- label
-    levels(label_gen) <- c('Readmission','Readmission','NO')
+    data <- data[,-46]
     ```
     + Split this train data into training and test dataset according to the ratio 8:2 (set seed to make partioning reproducible).
     ```{r Preprocessing_splitting, cache=TRUE}
