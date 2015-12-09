@@ -10,3 +10,5 @@ rattle
 randomForest
 gridExtra
 pander
+psych
+FactoMineR
