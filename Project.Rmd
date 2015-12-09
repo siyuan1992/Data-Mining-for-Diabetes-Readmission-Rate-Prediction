@@ -18,17 +18,63 @@ The management of hyperglycemia in the hospitalized inpatient becomes increasing
 The data is from the Center for Clinical and Translational Research, Viginia Commonwealth University, which presents 10 years (1999-2008) of clinical care at 130 US hospitals and integrated delivery networks [paper]. The goals here are identify the major factors that contribute to hospital readmissions as well as find the best model to predict the readmission type given inpatient information.
 
 The difficulties of this problem are mainly in the following aspects:
+
 * The dataset is relatively large (~100,000 samples, 55 features)
 * Several features have large propotional missing data due to the fact that prior to the HITECH legislation of the American Reinvestment and Recovery Act in 2009 hospitals and clinics were not required to capture it in a structured format [paper].
 * Significant amounts of preprocessing required:
-  + The preliminary dataet contained multiple inpaitent visits for some patients 
-
+    + The preliminary dataet contained multiple inpaitent visits for some patients and the observations could not be considered statistically independent [paper].
+    + Even though the preliminary dataset was extracted from the database with processing, lots of redundant features still exist.
+    + Almost 80% features are nominal. Thus, after feature encoding, data will be expanded into a large dimension, which makes feature selection and classification extremely time consuming.
+    + Class labels are hierarchical. Three types of readmission are `NO`, `>30`, `<30`, i.e., whether a patient will have readmission and if the patient have, a hospitalization occurs within 30 days or not.
 
 # Literature Review
+The research artical [paper] talked about the background information about th dataset and the information of each feature, which as a reference, helps me to deal with redundant features.
+
+The other paper [slide] analyze the influence of different features and use some tricks to improve the performance. The trick they used are listed here: 
+
+* Data pre-mining
+    + Re-categorize readmission group from 3 groups to 2 groups (Readmission <30 days and Non-within 30 days.)
+    + Subsample to make readmission group's ratio be 1:1
+    + Review each feature's relationship with readmission
+    + Review numeric variables correlation
+    
+* Use QUEST model to improve accuracy.
+
+Several gruops use the similar trick, like recategorizing readmission groups to two (Readmission or not). However, data pre-mining is of upmost importance in improving the model accuracy. With data pre-mining and ensemble models, the highest accuracy could reach 80% [2 stage]. 
 
 # Prior and Related Work
 This project is exclusively for EE660.
 
+# Project Formulation and Setup
+I tried several modals and algorithms for this project, e.g. Perceptron, SVM, logistic classifier, etc. I want to list two of them which have best performances.
+
+* The first is gradient tree boosting classifier. The algorithm (pseudocode) is as follows [wiki]:
+
+-------------------------------------------------------------------------------
+Input: training set ${(\textbf{x}_{i},y_{i})}_{i=1}^N$, loss function $L(y,f(\textbf{x}))$ and number of iteration M.
+
+Algorithm: 
+
+    I. Initialize model with a constant value:
+    
+    $$f_{0}(x)=\mathop{\arg\min}\limits_{\gamma}\sum_{i=1}^NL(y_i,\gamma)$$.
+    
+    II. for m=1 to M:
+    
+        1. Compute pesudo-residuals:
+        $$r_{im}=-[\frac{\partial{L(y_i,f(\textbf{x}_i))}}{\partial{f(\textbf{x}_i)}}]_{f(\textbf{x})=f_{m-1}(\textbf{x})} \qquad  for\ i=1,...,N$$.
+        
+        2. Train with training set ${(\textbf{x}_i,r_{im})}_{i=1}^N$.
+        
+        3. Compute $\gamma{_m}$ by solving:
+        $$\gamma{_m}=\mathop{\arg\min}\limits_{\gamma}\sum_{i=1}^NL(y_i,f_{m-1}(\textbf{x}_i)+\gamma{h_m(\textbf{x}_i)})$$.
+        
+        4. Update the model:
+        $$f_m(\textbf{x})=f_{m-1}(\textbf{x})+\gamma{_m}h_m(\textbf{x})$$
+        
+    III. Output $F_M(\textbf{x})$.
+    
+-------------------------------------------------------------------------------
 
 
 # Reproducibility
@@ -120,7 +166,6 @@ data <- data[,c(-1,-2)]
 label <- data$readmitted
 label_gen <- label
 levels(label_gen) <- c('Readmission','Readmission','NO')
-data <- data[,-46]
 ```
 
 * Split this train data into training and test dataset according to the ratio 6:4 (set seed to make partioning reproducible)
@@ -147,6 +192,11 @@ plot((training_label_gen), xlab = 'Readmission or not', ylab = 'frequency',
 ```
 
 Classes are unbalanced distributed in three levels, but not very skewed. Since `<30` and `>30` are subsets of `Readmission`, hierarchical classification (two-stage classification) is straightforward.
+
+```{r undersample}
+set.seed(12121)
+
+```
 
 * Kill unimportant features.(_nearZeroVar_ diagnoses predictors that have one unique value (i.e. are zero variance predictors) or predictors that are have both of the following characteristics: they have very few unique values relative to the number of samples and the ratio of the frequency of the most common value to the frequency of the second most common value is large.) (cite)
 

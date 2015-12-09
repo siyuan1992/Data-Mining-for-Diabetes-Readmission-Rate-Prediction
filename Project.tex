@@ -145,20 +145,135 @@ clinical care at 130 US hospitals and integrated delivery networks
 contribute to hospital readmissions as well as find the best model to
 predict the readmission type given inpatient information.
 
-The difficulties of this problem are mainly in the following aspects: *
-The dataset is relatively large (\textasciitilde{}100,000 samples, 55
-features) * Several features have large propotional missing data due to
-the fact that prior to the HITECH legislation of the American
-Reinvestment and Recovery Act in 2009 hospitals and clinics were not
-required to capture it in a structured format {[}paper{]}. * Significant
-amounts of preprocessing required: + The preliminary dataet contained
-multiple inpaitent visits for some patients
+The difficulties of this problem are mainly in the following aspects:
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  The dataset is relatively large (\textasciitilde{}100,000 samples, 55
+  features)
+\item
+  Several features have large propotional missing data due to the fact
+  that prior to the HITECH legislation of the American Reinvestment and
+  Recovery Act in 2009 hospitals and clinics were not required to
+  capture it in a structured format {[}paper{]}.
+\item
+  Significant amounts of preprocessing required:
+
+  \begin{itemize}
+  \itemsep1pt\parskip0pt\parsep0pt
+  \item
+    The preliminary dataet contained multiple inpaitent visits for some
+    patients and the observations could not be considered statistically
+    independent {[}paper{]}.
+  \item
+    Even though the preliminary dataset was extracted from the database
+    with processing, lots of redundant features still exist.
+  \item
+    Almost 80\% features are nominal. Thus, after feature encoding, data
+    will be expanded into a large dimension, which makes feature
+    selection and classification extremely time consuming.
+  \item
+    Class labels are hierarchical. Three types of readmission are
+    \texttt{NO}, \texttt{\textgreater{}30}, \texttt{\textless{}30},
+    i.e., whether a patient will have readmission and if the patient
+    have, a hospitalization occurs within 30 days or not.
+  \end{itemize}
+\end{itemize}
 
 \section{Literature Review}\label{literature-review}
+
+The research artical {[}paper{]} talked about the background information
+about th dataset and the information of each feature, which as a
+reference, helps me to deal with redundant features.
+
+The other paper {[}slide{]} analyze the influence of different features
+and use some tricks to improve the performance. The trick they used are
+listed here:
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Data pre-mining
+
+  \begin{itemize}
+  \itemsep1pt\parskip0pt\parsep0pt
+  \item
+    Re-categorize readmission group from 3 groups to 2 groups
+    (Readmission \textless{}30 days and Non-within 30 days.)
+  \item
+    Subsample to make readmission group's ratio be 1:1
+  \item
+    Review each feature's relationship with readmission
+  \item
+    Review numeric variables correlation
+  \end{itemize}
+\item
+  Use QUEST model to improve accuracy.
+\end{itemize}
+
+Several gruops use the similar trick, like recategorizing readmission
+groups to two (Readmission or not). However, data pre-mining is of
+upmost importance in improving the model accuracy. With data pre-mining
+and ensemble models, the highest accuracy could reach 80\% {[}2
+stage{]}.
 
 \section{Prior and Related Work}\label{prior-and-related-work}
 
 This project is exclusively for EE660.
+
+\section{Project Formulation and
+Setup}\label{project-formulation-and-setup}
+
+I tried several modals and algorithms for this project, e.g.~Perceptron,
+SVM, logistic classifier, etc. I want to list two of them which have
+best performances.
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  The first is gradient tree boosting classifier. The algorithm
+  (pseudocode) is as follows {[}wiki{]}:
+\end{itemize}
+
+\begin{longtable}[c]{@{}l@{}}
+\toprule
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+Input: training set \({(\textbf{x}_{i},y_{i})}_{i=1}^N\), loss function
+\(L(y,f(\textbf{x}))\) and number of iteration M.
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+Algorithm:
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+I. Initialize model with a constant value:
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+\[f_{0}(x)=\mathop{\arg\min}\limits_{\gamma}\sum_{i=1}^NL(y_i,\gamma)\].
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+II. for m=1 to M:
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+1. Compute pesudo-residuals:
+\[r_{im}=-[\frac{\partial{L(y_i,f(\textbf{x}_i))}}{\partial{f(\textbf{x}_i)}}]_{f(\textbf{x})=f_{m-1}(\textbf{x})} \qquad  for\ i=1,...,N\].
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+2. Train with training set \({(\textbf{x}_i,r_{im})}_{i=1}^N\).
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+3. Compute \(\gamma{_m}\) by solving:
+\[\gamma{_m}=\mathop{\arg\min}\limits_{\gamma}\sum_{i=1}^NL(y_i,f_{m-1}(\textbf{x}_i)+\gamma{h_m(\textbf{x}_i)})\].
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+4. Update the model:
+\[f_m(\textbf{x})=f_{m-1}(\textbf{x})+\gamma{_m}h_m(\textbf{x})\]
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.97\columnwidth}\raggedright\strut
+III. Output \(F_M(\textbf{x})\).
+\strut\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
 
 \section{Reproducibility}\label{reproducibility}
 
@@ -431,7 +546,6 @@ days. (cite)
 \NormalTok{label <-}\StringTok{ }\NormalTok{data$readmitted}
 \NormalTok{label_gen <-}\StringTok{ }\NormalTok{label}
 \KeywordTok{levels}\NormalTok{(label_gen) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'Readmission'}\NormalTok{,}\StringTok{'NO'}\NormalTok{)}
-\NormalTok{data <-}\StringTok{ }\NormalTok{data[,-}\DecValTok{46}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -488,6 +602,12 @@ Classes are unbalanced distributed in three levels, but not very skewed.
 Since \texttt{\textless{}30} and \texttt{\textgreater{}30} are subsets
 of \texttt{Readmission}, hierarchical classification (two-stage
 classification) is straightforward.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{12121}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{itemize}
 \itemsep1pt\parskip0pt\parsep0pt
