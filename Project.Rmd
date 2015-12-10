@@ -278,7 +278,7 @@ In general, should split the original data into training and testing first and t
     training <- training[,-which(NZV_2$nzv==TRUE)]
     test<- test[,-which(NZV_2$nzv==TRUE)]
     ```
-    + Normalize data (There are lots of differnt methods for normalization,
+    + Normalize data (There are lots of differnt methods for normalization. However, this has the best performance.)
     ```{r normalization,warning=FALSE}
     training <- apply(training,2,as.numeric)
     test <- apply(test,2,as.numeric)
@@ -302,7 +302,7 @@ Purpose for doing that is `R` is good for exploratory research, but not good at 
 Here, `boosting tree classifier` has the best performance.
 
 # Final results
-The final accuracy using `boosting tree classifier` is around 70% accuracy, which is the best among all models I used. Since randomly assign class label will yield around 30% accuracy, 70% accuracy is a huge improvement. There are lots of researches using this dataset for classification. The best performance is around 70%~80% accuracy. However, the most importance factor for improving the result is data pre-mining instead of choosing more advanced models.
+The final accuracy using `boosting tree classifier` is around 70% accuracy, which is the best among all models I used. Since randomly assign class label will yield around 30% accuracy, 70% accuracy is a huge improvement. There are lots of researches using this dataset for classification. The best performance is around 70%~80% accuracy[5,7]. However, the most importance factor for improving the result is data pre-mining instead of choosing more advanced models.
 
 # Summary and Conclusions
 * Data pre-mining is of upmost importance in improving the model accuracy, especially for this imbalanced-class problem.
